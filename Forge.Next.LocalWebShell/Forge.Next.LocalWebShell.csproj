@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>12.0</LangVersion>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Title>Forge.Next.LocalWebShell: a local browser shell for ASP.NET Core admin apps.</Title>
+		<Product>Forge.Next.LocalWebShell: a local browser shell for ASP.NET Core admin apps.</Product>
+		<PackageId>Forge.Next.LocalWebShell</PackageId>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<Version>$(AssemblyVersion)</Version>
+		<FileVersion>$(AssemblyVersion)</FileVersion>
+		<Authors>Zoltan Juhasz</Authors>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageTags>Forge,Next,LocalWebShell,Blazor,Kestrel,Localhost,Admin</PackageTags>
+		<Description>Runs an ASP.NET Core app (for example Blazor Server) as a local tool in the user's own browser, without WebView2: it listens on the loopback address only, admits only the browser it opened (a launch token exchanged for a cookie), checks the Host header, and on Windows opens the browser without elevation even when the app runs as administrator.</Description>
+		<PackageOutputPath>../artifacts/</PackageOutputPath>
+		<PackageProjectUrl>https://github.com/JZO001/Forge.Next.LocalWebShell</PackageProjectUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/JZO001/Forge.Next.LocalWebShell</RepositoryUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="../logo.png" Pack="true" Visible="false" PackagePath="" />
+		<None Include="../README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="ErrorOr" Version="2.1.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Forge.Next.LocalWebShell.Tests" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+</Project>

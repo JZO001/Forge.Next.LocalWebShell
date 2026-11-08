@@ -1,0 +1,33 @@
+<Solution>
+  <Folder Name="/.Solution Items/">
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="CLAUDE.md" />
+    <File Path="LICENSE" />
+    <File Path="logo.png" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/.Solution Items/.claude/" />
+  <Folder Name="/.Solution Items/.claude/commands/">
+    <File Path=".claude/commands/commit.changes.md" />
+    <File Path=".claude/commands/crt.commit.msg.md" />
+  </Folder>
+  <Folder Name="/.Solution Items/AI/">
+    <File Path="AI/DESIGN.md" />
+    <File Path="AI/HISTORY.md" />
+    <File Path="AI/OPEN.md" />
+    <File Path="AI/README.md" />
+    <File Path="AI/VERIFICATION.md" />
+  </Folder>
+  <Folder Name="/.Solution Items/tools/">
+    <File Path="tools/linux-check.sh" />
+    <File Path="tools/run-linux-check.ps1" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Forge.Next.LocalWebShell.Sample/Forge.Next.LocalWebShell.Sample.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Forge.Next.LocalWebShell.Tests/Forge.Next.LocalWebShell.Tests.csproj" />
+  </Folder>
+  <Project Path="Forge.Next.LocalWebShell/Forge.Next.LocalWebShell.csproj" />
+</Solution>

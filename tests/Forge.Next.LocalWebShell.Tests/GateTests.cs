@@ -30,6 +30,35 @@ public class GateTests
         (await response.Content.ReadAsStringAsync()).ShouldContain("Open the link from the console window");
     }
 
+    /// <summary>
+    /// The 401 page follows the browser's language where the settings have it, names the language it chose, and says that
+    /// the answer depends on the header; without a fitting language it is in the default one.
+    /// </summary>
+    [Theory]
+    [InlineData("hu-HU,hu;q=0.9,en;q=0.8", "hu", "Nyisd meg a konzol linkjét")]
+    [InlineData("de-DE", "en", "Open the link from the console window")]
+    [InlineData(null, "en", "Open the link from the console window")]
+    public async Task InvokeAsync_WhenTheBrowserSendsItsLanguages_ShouldAnswerInTheFirstThatFits(string? acceptLanguage, string language, string title)
+    {
+        await using TestShell shell = await TestShell.StartAsync(options =>
+            options.UnauthorizedTexts["hu"] = new UnauthorizedText { Title = "Nyisd meg a konzol linkjét", Message = "A linket a konzolablak mutatja." });
+        using HttpClient client = shell.RawClient();
+        using HttpRequestMessage request = new(HttpMethod.Get, "/");
+        if (acceptLanguage is not null)
+        {
+            request.Headers.TryAddWithoutValidation("Accept-Language", acceptLanguage);
+        }
+
+        using HttpResponseMessage response = await client.SendAsync(request);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        response.Content.Headers.ContentLanguage.ShouldBe([language]);
+        response.Headers.Vary.ShouldContain("Accept-Language");
+        string html = await response.Content.ReadAsStringAsync();
+        html.ShouldContain($"<html lang=\"{language}\">");
+        html.ShouldContain($"<title>{title}</title>");
+    }
+
     /// <summary>The token sets an HttpOnly, SameSite=Strict cookie and redirects to the same path without the token.</summary>
     [Fact]
     public async Task InvokeAsync_WhenTheTokenIsRight_ShouldSetTheCookieAndRedirectWithoutTheToken()

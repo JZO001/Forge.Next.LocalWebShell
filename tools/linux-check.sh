@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# The Linux check of Forge.Next.LocalWebShell. Runs inside mcr.microsoft.com/dotnet/sdk:10.0 with the repository
-# mounted read-only at /src; start it with tools/run-linux-check.ps1 (Windows) or:
-#   docker run --rm -v "$PWD:/src:ro" mcr.microsoft.com/dotnet/sdk:10.0 bash /src/tools/linux-check.sh
+# The Linux check of Forge.Next.LocalWebShell. Runs inside mcr.microsoft.com/dotnet/sdk:11.0 with the repository
+# mounted read-only at /src and network access (the restore, and the .NET 10 runtime); start it with
+# tools/run-linux-check.ps1 (Windows) or:
+#   docker run --rm -v "$PWD:/src:ro" mcr.microsoft.com/dotnet/sdk:11.0 bash /src/tools/linux-check.sh
 # It prints every check with its expectation and exits non-zero on the first failed one.
 set -euo pipefail
 
 fail() { echo "FAIL: $*"; exit 1; }
 
+echo "== 0. The .NET 10 runtime next to the image's .NET 11 (the tests also run on net10.0, the sample is net10.0)"
+bash /src/tools/linux-net10-runtime.sh || fail "installing the .NET 10 runtime"
+
 mkdir -p /work/repo
 tar -C /src --exclude=bin --exclude=obj --exclude=artifacts --exclude=.git --exclude=.vs -cf - . | tar -C /work/repo -xf -
 cd /work/repo
 
-echo "== 1. The test suite on Linux (as root, no graphical session)"
+echo "== 1. The test suite on Linux, on net10.0 and net11.0 (as root, no graphical session)"
 dotnet test tests/Forge.Next.LocalWebShell.Tests -c Release --nologo > /work/tests.log 2>&1 || { tail -n 60 /work/tests.log; fail "tests"; }
 grep -E "Passed!|Failed!" /work/tests.log
 

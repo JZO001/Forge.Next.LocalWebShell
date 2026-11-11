@@ -1,12 +1,17 @@
 using Forge.Next.LocalWebShell.Tests.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Forge.Next.LocalWebShell.Tests;
 
-/// <summary>The registration: the logging filter that keeps the token out of the log, idempotence, and a replaced launcher.</summary>
+/// <summary>
+/// The registration: the logging filter that keeps the token out of the log, idempotence, a replaced launcher, and the
+/// binding of the settings.
+/// </summary>
 public class WebApplicationBuilderExtensionsTests
 {
     /// <summary>The request diagnostics, which log the full URL with the token, are on from Warning only.</summary>
@@ -41,11 +46,30 @@ public class WebApplicationBuilderExtensionsTests
     [Fact]
     public async Task AddLocalWebShell_WhenALauncherIsAlreadyRegistered_ShouldKeepIt()
     {
-        ILocalBrowserLauncher own = NSubstitute.Substitute.For<ILocalBrowserLauncher>();
+        IBrowserLauncher own = NSubstitute.Substitute.For<IBrowserLauncher>();
 
         await using TestShell shell = await TestShell.StartAsync(arrange: builder => builder.Services.AddSingleton(own));
 
-        shell.App.Services.GetRequiredService<ILocalBrowserLauncher>().ShouldBeSameAs(own);
+        shell.App.Services.GetRequiredService<IBrowserLauncher>().ShouldBeSameAs(own);
+    }
+
+    /// <summary>
+    /// The 401 page's further languages bind from configuration, and their keys stay case-insensitive after the binding.
+    /// </summary>
+    [Fact]
+    public async Task AddLocalWebShell_WhenTheConfigurationHasFurtherLanguages_ShouldBindThem()
+    {
+        await using TestShell shell = await TestShell.StartAsync(arrange: builder => builder.Configuration.AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                ["LocalWebShell:UnauthorizedTexts:hu:Title"] = "Cím",
+                ["LocalWebShell:UnauthorizedTexts:hu:Message"] = "Üzenet",
+            }));
+
+        Options options = shell.App.Services.GetRequiredService<IOptions<Options>>().Value;
+
+        options.UnauthorizedTexts["HU"].Title.ShouldBe("Cím");
+        options.UnauthorizedTexts["hu"].Message.ShouldBe("Üzenet");
     }
 
     /// <summary>A null builder is a programming error.</summary>

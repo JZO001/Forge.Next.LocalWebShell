@@ -49,7 +49,7 @@ public class WebApplicationExtensionsTests
     [Fact]
     public async Task StartLocalWebShellAsync_WhenTheBrowserIsOn_ShouldOpenTheLaunchLink()
     {
-        ILocalBrowserLauncher launcher = Substitute.For<ILocalBrowserLauncher>();
+        IBrowserLauncher launcher = Substitute.For<IBrowserLauncher>();
         Uri? opened = null;
         launcher.Open(Arg.Any<Uri>()).Returns(call =>
         {
@@ -71,7 +71,7 @@ public class WebApplicationExtensionsTests
     [Fact]
     public async Task StartLocalWebShellAsync_WhenTheBrowserCannotBeOpened_ShouldReportItAndKeepRunning()
     {
-        ILocalBrowserLauncher launcher = Substitute.For<ILocalBrowserLauncher>();
+        IBrowserLauncher launcher = Substitute.For<IBrowserLauncher>();
         launcher.Open(Arg.Any<Uri>()).Returns(Error.Failure(ErrorCodes.BrowserNotOpened, "no desktop"));
 
         await using TestShell shell = await TestShell.StartAsync(
@@ -89,7 +89,7 @@ public class WebApplicationExtensionsTests
     [Fact]
     public async Task StartLocalWebShellAsync_WhenTheLauncherThrows_ShouldReportBrowserNotOpened()
     {
-        ILocalBrowserLauncher launcher = Substitute.For<ILocalBrowserLauncher>();
+        IBrowserLauncher launcher = Substitute.For<IBrowserLauncher>();
         launcher.Open(Arg.Any<Uri>()).Returns<ErrorOr<Success>>(_ => throw new InvalidOperationException("broken launcher"));
 
         await using TestShell shell = await TestShell.StartAsync(

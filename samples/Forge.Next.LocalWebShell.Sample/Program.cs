@@ -4,7 +4,12 @@ using ErrorOr;
 using Forge.Next.LocalWebShell;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-builder.AddLocalWebShell();
+// The 401 page in a second language, for a browser that prefers it; a real application takes the texts from its resources.
+builder.AddLocalWebShell(options => options.UnauthorizedTexts["hu"] = new UnauthorizedText
+{
+    Title = "Nyisd meg a linket a konzolablakból",
+    Message = "Ez az alkalmazás csak azzal a linkkel nyílik meg, amelyet induláskor a konzolablakába írt. Nyisd meg azt a linket, vagy indítsd újra az alkalmazást.",
+});
 
 await using WebApplication app = builder.Build();
 app.MapGet("/", () => Results.Content(

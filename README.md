@@ -23,12 +23,14 @@ no Edge requirement.
 - [Why this package exists](#why-this-package-exists)
 - [What it does](#what-it-does)
 - [Installation](#installation)
+- [Changes in 1.1.0](#changes-in-110)
 - [Requirements](#requirements)
 - [Quick start](#quick-start)
 - [Blazor Server](#blazor-server)
 - [How a launch works](#how-a-launch-works)
 - [The launch token, explained](#the-launch-token-explained)
 - [Configuration](#configuration)
+- [The 401 page in the user's language](#the-401-page-in-the-users-language)
 - [What to print in the console](#what-to-print-in-the-console)
 - [Running as administrator or root](#running-as-administrator-or-root)
 - [Linux and macOS](#linux-and-macos)
@@ -87,15 +89,26 @@ Or via a `PackageReference`:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Forge.Next.LocalWebShell" Version="1.0.0" />
+  <PackageReference Include="Forge.Next.LocalWebShell" Version="1.1.0" />
 </ItemGroup>
 ```
+
+## Changes in 1.1.0
+
+- **The 401 page follows the browser's language.** New settings: `UnauthorizedLanguage` (the language of the default
+  texts) and `UnauthorizedTexts` (the page in further languages). See
+  [The 401 page in the user's language](#the-401-page-in-the-users-language). The page now names its language
+  (`<html lang>`, `Content-Language`), and keeps accented letters as they are instead of HTML entities.
+- **Breaking: `ILocalBrowserLauncher` is now `IBrowserLauncher`.** Rename it where you replace the launcher
+  (`AddSingleton<IBrowserLauncher, MyLauncher>()`); its member and its behaviour are unchanged.
+- **A `net11.0` target.** The package now targets `net8.0` to `net11.0`, so an application on .NET 11 gets a build of
+  its own.
 
 ## Requirements
 
 | | |
 | --- | --- |
-| **Target frameworks** | `net8.0`, `net9.0`, `net10.0` |
+| **Target frameworks** | `net8.0`, `net9.0`, `net10.0`, `net11.0` |
 | **Runtime** | The ASP.NET Core shared framework (`Microsoft.AspNetCore.App`). A framework-dependent app needs the **ASP.NET Core Runtime** plus the **.NET Runtime**, or the **ASP.NET Core Hosting Bundle**, which contains both; a self-contained app carries them. No WebView2, no Windows Desktop Runtime. |
 | **Dependencies** | [`ErrorOr`](https://www.nuget.org/packages/ErrorOr) (`>= 2.1.1`) for the typed results. |
 | **Operating systems** | Windows, Linux (and FreeBSD) and macOS. The gate, the binding and the start are the same everywhere; opening the browser uses the shell or the desktop shell on Windows, `xdg-open` in a Linux graphical session and `open` on macOS (see [Linux and macOS](#linux-and-macos)). |
@@ -221,8 +234,10 @@ binding, so code wins. They are validated when the application is built: `builde
 | `OpenBrowser` | `true` | Open the default browser at the launch link. `false` for tests, headless runs and machines without a desktop. |
 | `CookieName` | `Forge.LocalWebShell` | The base name of the session cookie; the port is appended (`Forge.LocalWebShell-54321`). It must be a valid cookie name. |
 | `CookieSameSite` | `Strict` | `Strict` or `Lax`. `Strict` keeps the cookie off everything a foreign page starts. `Lax` is the fallback for a browser that drops a strict cookie on the first navigation; it still keeps the cookie off cross-site WebSockets and sub-requests. `None` is rejected. |
-| `UnauthorizedTitle` | `Open the link from the console window` | The title of the 401 page (HTML-encoded). |
-| `UnauthorizedMessage` | `This application opens only through the link…` | The text of the 401 page (HTML-encoded). Translate both with the application's own texts if needed. |
+| `UnauthorizedTitle` | `Open the link from the console window` | The title of the 401 page, in `UnauthorizedLanguage` (HTML-encoded). |
+| `UnauthorizedMessage` | `This application opens only through the link…` | The text of the 401 page, in `UnauthorizedLanguage` (HTML-encoded). |
+| `UnauthorizedLanguage` | `en` | The language tag of the two texts above. |
+| `UnauthorizedTexts` | empty | The 401 page in further languages, keyed by language tag: `UnauthorizedTexts:hu:Title`, `UnauthorizedTexts:hu:Message`. See [The 401 page in the user's language](#the-401-page-in-the-users-language). |
 
 The address is not a setting: the shell always listens on `127.0.0.1` only.
 
@@ -237,6 +252,54 @@ The address is not a setting: the shell always listens on `127.0.0.1` only.
 ```
 
 From the command line: `MyTool.exe --LocalWebShell:OpenBrowser=false --LocalWebShell:Port=5123`.
+
+## The 401 page in the user's language
+
+The 401 page is the one page the application itself cannot render: the gate answers before the application's
+pipeline, and before its request localization. So the gate picks the language itself, from the browser's
+`Accept-Language` header, among the texts the application gave it:
+
+```csharp
+builder.AddLocalWebShell(options =>
+{
+    // The default texts, and their language.
+    options.UnauthorizedLanguage = "en";
+    options.UnauthorizedTitle = "Open the link from the console window";
+    options.UnauthorizedMessage = "This tool opens only through the link it printed in its console window.";
+
+    // Further languages, typically from the application's resources.
+    options.UnauthorizedTexts["hu"] = new UnauthorizedText
+    {
+        Title = "Nyisd meg a linket a konzolablakból",
+        Message = "Ez az eszköz csak azzal a linkkel nyílik meg, amelyet a konzolablakába írt.",
+    };
+});
+```
+
+Or from configuration:
+
+```json
+{
+  "LocalWebShell": {
+    "UnauthorizedTexts": {
+      "hu": { "Title": "Nyisd meg a linket a konzolablakból", "Message": "Ez az eszköz csak azzal a linkkel nyílik meg…" }
+    }
+  }
+}
+```
+
+How the language is chosen:
+- the browser's languages are tried in its order (by quality; `q=0` and `*` are skipped), the first ten of them;
+- for each, the first that fits: the same tag, then the tag's language alone (`hu-HU` → `hu`), then a key of the same
+  language (`pt` → `pt-BR`);
+- the default texts take part under `UnauthorizedLanguage`, so `en-US,hu;q=0.8` gets English even when Hungarian is
+  configured;
+- a browser that asks for none of them gets the default texts.
+
+The page names the language it chose (`<html lang>`, `Content-Language`) and sends `Vary: Accept-Language`. The keys and
+`UnauthorizedLanguage` must be language tags (`hu`, `pt-BR`, `zh-Hant-TW`), and every entry needs both texts; the
+validation on build names a wrong one. A tag from the request is only compared with the configured keys, never used to
+look up a culture.
 
 ## What to print in the console
 
@@ -310,12 +373,15 @@ ssh -L 5123:127.0.0.1:5123 user@server
   the console; `xdg-open` repeats the link, token included, when it fails. The console is the user's own and already
   shows the link, but do not capture the console into a log.
 - The privilege check is `Environment.IsPrivilegedProcess`: root on Unix, an elevated token on Windows.
-- Verified on Linux in Docker (`mcr.microsoft.com/dotnet/sdk:10.0`), with `pwsh tools/run-linux-check.ps1`:
-  - the whole test suite;
+- Verified on Linux in Docker (`mcr.microsoft.com/dotnet/sdk:11.0`, with the .NET 10 runtime added), with
+  `pwsh tools/run-linux-check.ps1`:
+  - the whole test suite, on .NET 10 and .NET 11;
   - the sample as root, as a normal user without a session, and with `DISPLAY` but without and with `xdg-open`;
   - the HTTP flow: 401 without the cookie, admitted with the link, 200 with the cookie, 400 for a foreign Host.
 
-  A real Linux desktop (a browser actually opening) has not been tried yet.
+  The desktop check (`pwsh tools/run-linux-check.ps1 -Desktop`) runs the browser route for real on a virtual X server:
+  `xdg-open` starts Firefox with the launch link, and Firefox shows the page behind the cookie. A desktop environment
+  (GNOME, KDE) and Wayland have not been tried yet.
 
 ## Logging
 
@@ -399,14 +465,14 @@ string page = await browser.GetStringAsync("/settings");          // passes with
 
 ## Replacing the browser launcher
 
-Register an `ILocalBrowserLauncher` before `AddLocalWebShell` to open a specific browser, or to do nothing in tests. The
+Register an `IBrowserLauncher` before `AddLocalWebShell` to open a specific browser, or to do nothing in tests. The
 package adds its default only when none is registered.
 
 ```csharp
-builder.Services.AddSingleton<ILocalBrowserLauncher, MyLauncher>();
+builder.Services.AddSingleton<IBrowserLauncher, MyLauncher>();
 builder.AddLocalWebShell();
 
-internal sealed class MyLauncher : ILocalBrowserLauncher
+internal sealed class MyLauncher : IBrowserLauncher
 {
     public ErrorOr<Success> Open(Uri url)
     {
@@ -498,10 +564,16 @@ The configuration delegate of `AddLocalWebShell` needs no type name at all: `bui
 
 ### `Options`
 
-`Port`, `OpenBrowser`, `CookieName`, `CookieSameSite`, `UnauthorizedTitle`, `UnauthorizedMessage`, and the constant
-`SectionName` (`"LocalWebShell"`). See [Configuration](#configuration).
+`Port`, `OpenBrowser`, `CookieName`, `CookieSameSite`, `UnauthorizedTitle`, `UnauthorizedMessage`,
+`UnauthorizedLanguage`, `UnauthorizedTexts` (`IDictionary<string, UnauthorizedText>`, keys without case), and the
+constant `SectionName` (`"LocalWebShell"`). See [Configuration](#configuration).
 
-### `ILocalBrowserLauncher`
+### `UnauthorizedText`
+
+The 401 page in one language, an entry of `Options.UnauthorizedTexts`: `Title` and `Message` (both required,
+HTML-encoded on the page).
+
+### `IBrowserLauncher`
 
 | Member | Description |
 | --- | --- |

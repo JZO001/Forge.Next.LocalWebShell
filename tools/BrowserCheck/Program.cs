@@ -4,7 +4,8 @@
 // - the first navigation must end on the page (the Strict cookie survived the redirect);
 // - the address bar must not hold the token;
 // - a reload stays in;
-// - a fresh context without the link gets the 401 page.
+// - a fresh context without the link gets the 401 page, in English;
+// - a fresh context whose browser prefers Hungarian gets the sample's Hungarian 401 page.
 // Usage (from the repository root):
 //   dotnet build samples/Forge.Next.LocalWebShell.Sample -c Release
 //   dotnet build tools/BrowserCheck
@@ -49,9 +50,18 @@ try
     IPage other = await stranger.NewPageAsync();
     Uri address = new(new Uri(launch).GetLeftPart(UriPartial.Path));
     IResponse? refused = await other.GotoAsync(address.ToString());
-    Console.WriteLine($"stranger-status={refused?.Status}");
+    string strangerLanguage = await other.GetAttributeAsync("html", "lang") ?? string.Empty;
+    Console.WriteLine($"stranger-status={refused?.Status} lang={strangerLanguage}");
 
-    bool ok = admitted && tokenGone && stillIn && refused?.Status == 401;
+    // A stranger whose browser prefers Hungarian gets the sample's Hungarian 401 page.
+    IBrowserContext hungarian = await browser.NewContextAsync(new() { Locale = "hu-HU" });
+    IPage hungarianPage = await hungarian.NewPageAsync();
+    IResponse? refusedHungarian = await hungarianPage.GotoAsync(address.ToString());
+    string hungarianLanguage = await hungarianPage.GetAttributeAsync("html", "lang") ?? string.Empty;
+    Console.WriteLine($"stranger-hu-status={refusedHungarian?.Status} lang={hungarianLanguage} title={await hungarianPage.TitleAsync()}");
+
+    bool ok = admitted && tokenGone && stillIn && refused?.Status == 401 && strangerLanguage == "en"
+        && refusedHungarian?.Status == 401 && hungarianLanguage == "hu";
     Console.WriteLine(ok ? "PASS" : "FAIL");
     return ok ? 0 : 1;
 }

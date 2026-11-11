@@ -84,3 +84,58 @@ this knowledge base current.
 Zoltán: this repository must not refer to any other project. The names of other products, repositories and his other
 packages, and decision numbers from elsewhere, were removed from the documents and this knowledge base. The rule is in
 `CLAUDE.md`. Third-party libraries and tools the package uses or documents stay.
+
+## 2026-11-08 – `ILocalBrowserLauncher` keeps its name
+
+The rename to `IBrowserLauncher`, offered after the type-name change, is not done: Zoltán approved keeping the name.
+`ILocalBrowserLauncher` does not repeat the namespace's last segment the way the old `LocalWebShell…` names did, and
+`IBrowserLauncher` would be generic enough to clash with a consumer's own browser abstraction. The item left `OPEN.md`.
+
+## 2026-11-11 – 1.1.0: the 401 page in the browser's language; `IBrowserLauncher`
+
+1.0.0 is published. A consuming admin tool shows its whole UI in the user's language, and the 401 page was the one place
+it could not follow the browser: the settings took a single title and message per process.
+
+**Zoltán's decisions:**
+- the 401 page follows the browser's language;
+- the reason in `BrowserNotOpened` stays English: the application can say the main sentence in its own language from
+  the error code, and the reason is diagnostics;
+- the launcher interface is renamed to `IBrowserLauncher` after all, as a breaking change in 1.1.0: the package has only
+  his own applications as consumers, so a breaking minor version is acceptable. This reverses the 2026-11-08 decision to
+  keep `ILocalBrowserLauncher`. The internal default launcher became `BrowserLauncher`.
+
+**The design:**
+- `UnauthorizedLanguage` (default `en`) names the language of the existing two texts;
+- `UnauthorizedTexts` adds further languages, keyed by language tag, from code or configuration;
+- the gate matches `Accept-Language` against the keys (see `DESIGN.md`).
+
+The page also gained `<html lang>`, `Content-Language` and `Vary: Accept-Language`. It keeps accented letters as they
+are: the first end-to-end test showed the default `HtmlEncoder` writing `é` as `&#xE9;`. The sample shows a Hungarian
+401 page, and `tools/BrowserCheck` checks it in a Hungarian browser context.
+
+**Verification:** see `VERIFICATION.md`, 2026-11-11.
+
+## 2026-11-11 – The `net11.0` target
+
+Zoltán added `net11.0` to the package's targets, in 1.1.0, before it was published. Its consequences for the repository:
+- building the package needs the .NET 11 SDK: the .NET 10 SDK refuses even to restore a project that targets
+  `net11.0` (`NETSDK1045`), and so does any project that references it;
+- the tests run on `net10.0` and `net11.0`, so the new target is run, not only built; the sample and
+  `tools/BrowserCheck` stay `net10.0`, the target the package's consumers use most;
+- the Linux checks moved to `mcr.microsoft.com/dotnet/sdk:11.0` (Ubuntu 26.04). That image carries only the .NET 11
+  runtime, so `tools/linux-net10-runtime.sh` adds the ASP.NET Core 10 runtime with Microsoft's `dotnet-install` script
+  for the `net10.0` tests and the sample. The checks already needed network for the restore.
+
+**Verification:** see `VERIFICATION.md`, 2026-11-11, the `net11.0` rows.
+
+## 2026-11-11 – Which projects may be named
+
+Zoltán: the 2026-11-08 rule ("no reference to any other project") was worded unfortunately. The intent is that the
+projects which use this package are not named. The other `Forge.*` projects, and the libraries the package uses
+(ErrorOr, the `Microsoft.*` libraries), may be named. The rule in `CLAUDE.md` now says so.
+
+## 2026-11-11 – The no-reference rule covers the consumers
+
+Zoltán clarified the 2026-11-08 rule in `CLAUDE.md`: it bans the names of the products, repositories and internal
+decisions of the projects that use, or will use, this package. The other `Forge.*` projects may be named, and so may the
+libraries and tools the package uses or documents, the `Microsoft.*` libraries among them.

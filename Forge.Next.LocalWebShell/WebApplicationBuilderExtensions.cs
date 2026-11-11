@@ -25,7 +25,7 @@ public static class WebApplicationBuilderExtensions
     /// <item>a gate in front of the whole pipeline admits only the browser that opened the launch link (a launch token
     /// exchanged for a session cookie) and only with a loopback Host header;</item>
     /// <item>ASP.NET Core's request diagnostics are logged from Warning up only, so the token does not reach the log;</item>
-    /// <item>a browser launcher is registered (<see cref="ILocalBrowserLauncher"/>), unless one already is.</item>
+    /// <item>a browser launcher is registered (<see cref="IBrowserLauncher"/>), unless one already is.</item>
     /// </list>
     /// Start the application with
     /// <see cref="WebApplicationExtensions.StartLocalWebShellAsync"/> instead of <c>Run</c>.
@@ -59,7 +59,7 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<Options>, OptionsValidation>());
         builder.Services.TryAddSingleton<Secrets>();
-        builder.Services.TryAddSingleton<ILocalBrowserLauncher, LocalBrowserLauncher>();
+        builder.Services.TryAddSingleton<IBrowserLauncher, BrowserLauncher>();
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<KestrelServerOptions>, KestrelSetup>());
         builder.Services.TryAddEnumerable(ServiceDescriptor.Transient<IStartupFilter, StartupFilter>());
 

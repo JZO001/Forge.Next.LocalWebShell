@@ -2,7 +2,7 @@ namespace Forge.Next.LocalWebShell.Browser;
 
 /// <summary>
 /// Decides how to open the browser, from the operating system, the process's privilege and the environment. A pure
-/// function, so every combination is testable on any operating system; <see cref="LocalBrowserLauncher"/> carries it out.
+/// function, so every combination is testable on any operating system; <see cref="BrowserLauncher"/> carries it out.
 /// </summary>
 /// <remarks>
 /// The rules, one per invariant:

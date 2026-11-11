@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace Forge.Next.LocalWebShell.Browser;
 
 /// <summary>
-/// The default <see cref="ILocalBrowserLauncher"/>: the user's default browser, never with elevated or root rights and
+/// The default <see cref="IBrowserLauncher"/>: the user's default browser, never with elevated or root rights and
 /// never inside the terminal.
 /// </summary>
 /// <remarks>
@@ -21,7 +21,7 @@ namespace Forge.Next.LocalWebShell.Browser;
 /// </list>
 /// When nothing is opened, the error says why, and the application prints the launch link.
 /// </remarks>
-internal sealed class LocalBrowserLauncher(ILogger<LocalBrowserLauncher> logger) : ILocalBrowserLauncher
+internal sealed class BrowserLauncher(ILogger<BrowserLauncher> logger) : IBrowserLauncher
 {
     /// <summary>The <c>SW_SHOWNORMAL</c> show command for the browser window.</summary>
     private const int ShowNormal = 1;

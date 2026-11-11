@@ -21,10 +21,12 @@ user's own browser, no WebView2). Read in this order:
   - after a work item, report and stop.
 - **Keep the knowledge base current:** when a change, a decision or a verification happens, update `AI/` in the same
   step, so the next session can continue from it. Zoltán asked for this explicitly.
-- **No reference to any other project** (Zoltán, 2026-11-08): no name of another product, repository, package of
-  his or internal decision, in the code, the documents or this knowledge base. Describe things generically ("a local
-  admin tool", "a hand-written local shell"). Third-party libraries and tools the package uses or documents (ASP.NET
-  Core, ErrorOr, Serilog, Playwright, Docker) are fine.
+- **No reference to the package's consumers** (Zoltán, 2026-11-08, clarified 2026-11-11): no name of a product,
+  repository or internal decision of a project that uses, or will use, this package, in the code, the documents or
+  this knowledge base. Describe a consumer generically ("a local admin tool", "a hand-written local shell"). Allowed:
+  - the other `Forge.*` projects;
+  - the libraries and tools this package uses or documents: ASP.NET Core and the other `Microsoft.*` libraries,
+    ErrorOr, Serilog, Playwright, Docker.
 
 ## Invariants (do not break)
 
@@ -53,7 +55,7 @@ user's own browser, no WebView2). Read in this order:
    (`xdg-open` would fall back to `lynx`, `w3m` and the like). `xdg-open` gets its standard input closed.
 10. **The browser opens after the server listens and the address is checked**, never before.
 11. **The decision is a pure function.** `BrowserRouting.Choose` decides from the platform, the privilege and the
-    environment; `LocalBrowserLauncher` only carries it out. New platform rules go into the function and its tests.
+    environment; `BrowserLauncher` only carries it out. New platform rules go into the function and its tests.
 12. **Expected failures are `ErrorOr` errors** with stable codes (`ErrorCodes`). Programming errors throw: a missing
     registration, invalid settings.
 
@@ -74,6 +76,9 @@ user's own browser, no WebView2). Read in this order:
   - XML documentation on every public and protected member, saying what null means, what errors come back, and why.
 - **The COM interop interfaces** in `Browser/Interop` declare the methods before the one called, to keep the vtable
   order. Do not reorder them.
+- **Targets:** the package targets `net8.0` to `net11.0`, so building it needs the .NET 11 SDK. The tests run on
+  `net10.0` and `net11.0`; the sample and `tools/BrowserCheck` are `net10.0`. The Linux checks run in
+  `mcr.microsoft.com/dotnet/sdk:11.0` and add the .NET 10 runtime (`tools/linux-net10-runtime.sh`).
 - **Tests:**
   - xUnit 2, Shouldly, NSubstitute;
   - one test class per tested class (`<Class>Tests`), named `Member_WhenCondition_ShouldOutcome`;
@@ -81,7 +86,8 @@ user's own browser, no WebView2). Read in this order:
 - **Before handing over a change:**
   - a 0-warning build of the solution;
   - all tests, from an elevated terminal on Windows so `DesktopShellTests` really checks;
-  - `pwsh tools/run-linux-check.ps1` when anything platform-related changed;
+  - `pwsh tools/run-linux-check.ps1` when anything platform-related changed, and with `-Desktop` when the browser route
+    on Linux changed;
   - `tools/BrowserCheck` when the gate or the cookie changed.
 
   See `AI/VERIFICATION.md`.

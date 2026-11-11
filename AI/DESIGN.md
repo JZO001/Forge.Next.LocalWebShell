@@ -9,16 +9,18 @@
 | `Options.cs`, `OptionsValidation.cs` | public / internal | The settings (`LocalWebShell` section) and their check (on build and on start) |
 | `Session.cs`, `BrowserState.cs` | public | The result of the start: address, launch link, browser state and error; `ToString` without the token |
 | `ErrorCodes.cs`, `Errors.cs` | public / internal | The stable error codes and the factories that build the errors |
-| `ILocalBrowserLauncher.cs` | public | The replaceable launcher interface |
+| `IBrowserLauncher.cs` | public | The replaceable launcher interface |
 | `KestrelSetup.cs` | internal | `IConfigureOptions<KestrelServerOptions>`: `Listen(IPAddress.Loopback, Port)` |
 | `StartupFilter.cs` | internal | Inserts `Gate` before the application's pipeline |
 | `Gate.cs` | internal | The middleware: Host check, token → cookie + redirect, cookie check, 401 page |
 | `Secrets.cs` | internal | The launch token and the cookie value: 32 random bytes each, URL-safe base64, constant-time comparison |
 | `LoopbackHosts.cs` | internal | The allowed Host names; whether a server address is loopback |
-| `UnauthorizedPage.cs` | internal | The static 401 page (HTML-encoded texts, no script) |
+| `UnauthorizedPage.cs` | internal | The static 401 page (HTML-encoded texts, no script), and the choice of its language from `Accept-Language` |
+| `UnauthorizedText.cs`, `UnauthorizedPageText.cs` | public / internal | The page's texts in one language (an entry of `Options.UnauthorizedTexts`); the texts chosen for one request |
+| `LanguageTags.cs` | internal | Whether a configured language tag is well formed, and a tag's language alone |
 | `Browser/BrowserRouting.cs` | internal | The pure decision: platform × privilege × environment → route or reason |
 | `Browser/BrowserPlatform.cs`, `BrowserRoute.cs`, `BrowserDecision.cs` | internal | The decision's types |
-| `Browser/LocalBrowserLauncher.cs` | internal | The default launcher: carries the decision out (shell, desktop shell, `xdg-open`, `open`) |
+| `Browser/BrowserLauncher.cs` | internal | The default launcher: carries the decision out (shell, desktop shell, `xdg-open`, `open`) |
 | `Browser/DesktopShell.cs`, `Browser/Interop/*` | internal | Windows: `ShellExecute` through Explorer, so the browser starts unelevated (COM on an STA thread, 10 s limit) |
 
 ## A launch, step by step
@@ -35,7 +37,8 @@
 3. **The first request:** the gate checks the Host header (400 if foreign). It sees the token, sets the cookie
    `Forge.LocalWebShell-<port>`, and answers 302 to the same path without the token (`Cache-Control: no-store`,
    `Referrer-Policy: no-referrer`).
-4. **Later requests:** they pass with the cookie. Without the token and the cookie: the 401 page.
+4. **Later requests:** they pass with the cookie. Without the token and the cookie: the 401 page, in the first of the
+   browser's languages that the settings have texts for (see below).
 
 ## The browser decision (`BrowserRouting.Choose`)
 
@@ -87,4 +90,11 @@
   headless server.
 - **`xdg-open`'s standard input closed:** nothing it starts can read the console. Its output is not redirected, because
   a closed output pipe could kill the browser it starts (SIGPIPE).
+- **The 401 page's language chosen by the gate itself:** the gate runs before the application's pipeline, so the
+  application's request localization has not run yet and its resources cannot be asked. The application hands the texts
+  over in the settings, and the gate matches `Accept-Language` against their keys only: a tag from a request is never
+  used to look up a culture. The default texts take part under `UnauthorizedLanguage`, so a browser that prefers the
+  default language gets it even when a lower-ranked language is configured. At most ten preferences are tried, against a
+  forged header. The encoder keeps every script's letters (`UnicodeRanges.All`): the page is UTF-8, and the default
+  encoder would turn every accented letter into an entity.
 - **Console output left to the application:** applications print in their own style (plain `Console`, Spectre.Console).

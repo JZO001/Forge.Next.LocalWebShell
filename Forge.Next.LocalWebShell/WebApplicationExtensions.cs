@@ -85,7 +85,7 @@ public static class WebApplicationExtensions
             return new Session(address.Value, launchUrl, BrowserState.NotRequested, null);
         }
 
-        ErrorOr<Success> opened = OpenBrowser(app.Services.GetRequiredService<ILocalBrowserLauncher>(), launchUrl);
+        ErrorOr<Success> opened = OpenBrowser(app.Services.GetRequiredService<IBrowserLauncher>(), launchUrl);
         if (opened.IsError)
         {
             if (logger.IsEnabled(LogLevel.Warning))
@@ -125,7 +125,7 @@ public static class WebApplicationExtensions
     }
 
     /// <summary>Asks the launcher to open the link; an exception from a replaced launcher becomes an error, not a crash.</summary>
-    private static ErrorOr<Success> OpenBrowser(ILocalBrowserLauncher launcher, Uri launchUrl)
+    private static ErrorOr<Success> OpenBrowser(IBrowserLauncher launcher, Uri launchUrl)
     {
         try
         {

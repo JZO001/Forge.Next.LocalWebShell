@@ -49,6 +49,48 @@ internal sealed class OptionsValidation : IValidateOptions<Options>
             failures.Add("LocalWebShell:UnauthorizedMessage must not be empty.");
         }
 
+        if (!LanguageTags.IsWellFormed(options.UnauthorizedLanguage))
+        {
+            failures.Add($"LocalWebShell:UnauthorizedLanguage '{options.UnauthorizedLanguage}' is not a language tag such as 'en' or 'pt-BR'.");
+        }
+
+        ValidateUnauthorizedTexts(options, failures);
+
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
+    }
+
+    /// <summary>
+    /// Checks the 401 page's further languages: every key a language tag, which the page writes into <c>lang</c> and
+    /// <c>Content-Language</c>, and every entry with both texts.
+    /// </summary>
+    /// <param name="options">The settings.</param>
+    /// <param name="failures">The problems found so far; this adds its own.</param>
+    private static void ValidateUnauthorizedTexts(Options options, List<string> failures)
+    {
+        foreach (KeyValuePair<string, UnauthorizedText> entry in options.UnauthorizedTexts)
+        {
+            string prefix = $"LocalWebShell:UnauthorizedTexts:{entry.Key}";
+
+            if (!LanguageTags.IsWellFormed(entry.Key))
+            {
+                failures.Add($"{prefix}: '{entry.Key}' is not a language tag such as 'hu' or 'pt-BR'.");
+            }
+
+            if (entry.Value is null)
+            {
+                failures.Add($"{prefix} has no texts.");
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(entry.Value.Title))
+            {
+                failures.Add($"{prefix}:Title must not be empty.");
+            }
+
+            if (string.IsNullOrWhiteSpace(entry.Value.Message))
+            {
+                failures.Add($"{prefix}:Message must not be empty.");
+            }
+        }
     }
 }

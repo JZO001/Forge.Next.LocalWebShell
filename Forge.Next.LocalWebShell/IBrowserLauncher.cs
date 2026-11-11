@@ -19,7 +19,7 @@ namespace Forge.Next.LocalWebShell;
 /// <see cref="WebApplicationBuilderExtensions.AddLocalWebShell"/> to replace it (for example to open a
 /// specific browser, or in tests); the shell registers the default only when none is registered.
 /// </remarks>
-public interface ILocalBrowserLauncher
+public interface IBrowserLauncher
 {
     /// <summary>Opens <paramref name="url"/> in the browser.</summary>
     /// <param name="url">The launch link; it carries the launch token, so do not log it.</param>

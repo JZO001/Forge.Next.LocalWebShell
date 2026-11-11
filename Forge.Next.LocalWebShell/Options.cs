@@ -53,12 +53,39 @@ public sealed class Options
     public SameSiteMode CookieSameSite { get; set; } = SameSiteMode.Strict;
 
     /// <summary>
-    /// The title of the page a browser gets when it has neither the launch token nor the session cookie (HTTP 401). It is
-    /// HTML-encoded. Translate it with the application's own texts if needed.
+    /// The title of the page a browser gets when it has neither the launch token nor the session cookie (HTTP 401), in
+    /// <see cref="UnauthorizedLanguage"/>. It is HTML-encoded. Further languages go into <see cref="UnauthorizedTexts"/>.
     /// </summary>
     public string UnauthorizedTitle { get; set; } = "Open the link from the console window";
 
-    /// <summary>The message of the page a browser gets without the launch token or the session cookie. It is HTML-encoded.</summary>
+    /// <summary>
+    /// The message of the page a browser gets without the launch token or the session cookie, in
+    /// <see cref="UnauthorizedLanguage"/>. It is HTML-encoded.
+    /// </summary>
     public string UnauthorizedMessage { get; set; } =
         "This application opens only through the link it printed in its console window when it started. Open that link, or start the application again.";
+
+    /// <summary>
+    /// The language of <see cref="UnauthorizedTitle"/> and <see cref="UnauthorizedMessage"/>, as a language tag
+    /// (<c>en</c>, <c>pt-BR</c>): <c>en</c> by default. The 401 page names its language (<c>lang</c> and
+    /// <c>Content-Language</c>), and a browser that prefers this language gets these texts even when
+    /// <see cref="UnauthorizedTexts"/> holds a language the browser ranks lower.
+    /// </summary>
+    public string UnauthorizedLanguage { get; set; } = "en";
+
+    /// <summary>
+    /// The 401 page in further languages, keyed by language tag (<c>hu</c>, <c>pt-BR</c>; the keys are compared without
+    /// case). Empty by default: the page is always in <see cref="UnauthorizedLanguage"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The page follows the browser's preferred languages (its <c>Accept-Language</c> header), in the browser's order.
+    /// For each, the shell takes the first that fits: the same tag, then its language alone (<c>hu-HU</c> → <c>hu</c>),
+    /// then a key of the same language (<c>pt</c> → <c>pt-BR</c>). A browser that asks for none of them gets the default
+    /// texts. The gate runs before the application's own request localization, so it reads the header itself; the
+    /// application supplies the texts, typically from its resources when it registers the shell.
+    /// </para>
+    /// <para>From configuration: <c>LocalWebShell:UnauthorizedTexts:hu:Title</c> and <c>LocalWebShell:UnauthorizedTexts:hu:Message</c>.</para>
+    /// </remarks>
+    public IDictionary<string, UnauthorizedText> UnauthorizedTexts { get; } = new Dictionary<string, UnauthorizedText>(StringComparer.OrdinalIgnoreCase);
 }

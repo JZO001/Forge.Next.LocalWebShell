@@ -63,4 +63,43 @@ public class OptionsValidationTests
 
         result.Failures!.Count().ShouldBe(2);
     }
+
+    /// <summary>The default texts' language must be a language tag, as the page writes it into an attribute and a header.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("en_US")]
+    [InlineData("en\"x")]
+    public void Validate_WhenTheUnauthorizedLanguageIsNotATag_ShouldFail(string language)
+    {
+        ValidateOptionsResult result = new OptionsValidation().Validate(null, new Options { UnauthorizedLanguage = language });
+
+        result.Failed.ShouldBeTrue();
+        result.FailureMessage.ShouldContain("LocalWebShell:UnauthorizedLanguage");
+    }
+
+    /// <summary>Well-formed further languages with both texts pass.</summary>
+    [Fact]
+    public void Validate_WhenTheFurtherLanguagesAreRight_ShouldSucceed()
+    {
+        Options options = new();
+        options.UnauthorizedTexts["hu"] = new UnauthorizedText { Title = "Cím", Message = "Üzenet" };
+        options.UnauthorizedTexts["zh-Hant-TW"] = new UnauthorizedText { Title = "標題", Message = "訊息" };
+
+        new OptionsValidation().Validate(null, options).Succeeded.ShouldBeTrue();
+    }
+
+    /// <summary>A further language is named by its key when the key is no tag or a text is missing.</summary>
+    [Fact]
+    public void Validate_WhenFurtherLanguagesAreWrong_ShouldNameEachProblem()
+    {
+        Options options = new();
+        options.UnauthorizedTexts["hu HU"] = new UnauthorizedText { Title = "Cím", Message = "Üzenet" };
+        options.UnauthorizedTexts["de"] = new UnauthorizedText { Title = " ", Message = string.Empty };
+
+        ValidateOptionsResult result = new OptionsValidation().Validate(null, options);
+
+        result.Failures!.ShouldContain(failure => failure.StartsWith("LocalWebShell:UnauthorizedTexts:hu HU:", StringComparison.Ordinal));
+        result.Failures!.ShouldContain("LocalWebShell:UnauthorizedTexts:de:Title must not be empty.");
+        result.Failures!.ShouldContain("LocalWebShell:UnauthorizedTexts:de:Message must not be empty.");
+    }
 }

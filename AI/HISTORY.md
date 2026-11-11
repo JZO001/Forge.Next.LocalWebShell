@@ -128,12 +128,6 @@ Zoltán added `net11.0` to the package's targets, in 1.1.0, before it was publis
 
 **Verification:** see `VERIFICATION.md`, 2026-11-11, the `net11.0` rows.
 
-## 2026-11-11 – Which projects may be named
-
-Zoltán: the 2026-11-08 rule ("no reference to any other project") was worded unfortunately. The intent is that the
-projects which use this package are not named. The other `Forge.*` projects, and the libraries the package uses
-(ErrorOr, the `Microsoft.*` libraries), may be named. The rule in `CLAUDE.md` now says so.
-
 ## 2026-11-11 – The no-reference rule covers the consumers
 
 Zoltán clarified the 2026-11-08 rule in `CLAUDE.md`: it bans the names of the products, repositories and internal
